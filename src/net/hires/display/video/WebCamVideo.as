@@ -235,6 +235,5 @@ package net.hires.display.video
 		{
 			return _camera;
 		}
-
 	}
 }
