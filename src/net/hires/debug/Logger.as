@@ -6,7 +6,7 @@
  * 
  * How to use:
  * 
- * 	addChild(new Logger());
+ * 	addChild( Logger.getMaster() );
  * 
  *	Logger.info("Info message");
  * 	Logger.debug("Debug message, result >", 1+2+3);
@@ -19,6 +19,7 @@
  * 	customLogger.info("Info Message");
  * 
  * version log:
+ * 
  *  09.08.06	1.7	Theo		+ Fixed Flash 10 bug (<> converted to &lt; etc.) { arg still CDATA gets converted }
  *  							+ CSS display inline for debug nodes fixes spacing incoherence between text / XML output
  *  09.07.23	1.6	Theo		+ Added getXMLDump() returning the FULL log as XML (the visible log being just a fragment)
@@ -48,7 +49,6 @@
  *								+ Slightly refactored
  * 	07.10.12	1.0	Mr.doob		+ First version 
  **/
-
 package net.hires.debug
 {
 	import flash.text.StyleSheet;
@@ -57,39 +57,24 @@ package net.hires.debug
 	public class Logger extends TextField
 	{
 
-
 		private static const DEFAULT_NAME : String = "Hi-ReS! Logger";
-
+		private static const _LEVEL_NAMES : Array = ['info', 'debug', 'warning', 'error'];
+		private static const _LEVEL_COLOURS : Array = ['#ffffff', '#99E1FF', '#00CC33', '#FF3300', '#FF0000'];
 		public static const LEVEL_INFO : int = 0;
 		public static const LEVEL_DEBUG : int = 1;
 		public static const LEVEL_WARNING : int = 2;
 		public static const LEVEL_ERROR : int = 3;
 		public static const LEVEL_SILENT : int = 4;
 
-		/**
-		 * The names of the log XML Nodes 
-		 * NOTE : Could this be an associative array with levels/names/colors ?
-		 */
-		private static const _LEVEL_NAMES : Array = ['info', 'debug', 'warning', 'error'];
-		private static const _LEVEL_COLOURS : Array = ['#ffffff', '#99E1FF', '#00CC33', '#FF3300', '#FF0000'];
-
-		/**
-		 * The level below which the messages wouldn't be logged.
-		 */
 		public var level : int;
 
-		/**
-		 * Maximum number of messages to show simultaneously.
-		 */
-		private var maxMessages : int;
-
-		/**
-		 * XML containing the log messages
-		 */
-		private var xmlLog : XML;
-		private var xmlFullLog : XML;
 		private static var master : Logger;
 
+
+
+		private var maxMessages : int;
+		private var xmlLog : XML;
+		private var xmlFullLog : XML;
 
 		/**
 		 * @param level			int			The level below which the messages wouldn't be logged
@@ -99,196 +84,165 @@ package net.hires.debug
 		 * @param maxMessages	int			Maximum number of messages to store simultaneously.
 		 * 									Set to zero to keep ALL the messages.
 		 */
-		public function Logger(level : int = 0, name : String = DEFAULT_NAME, isMaster : Boolean = true, maxMessages : int = 100)
+		public function Logger( level : int = 0, name : String = DEFAULT_NAME, isMaster : Boolean = true, maxMessages : int = 100 )
 		{
 			this.name = name;
 			this.level = level;
 			this.maxMessages = maxMessages;
 
-			if(isMaster)
+			if (isMaster)
+			{
 				master = this;
+			}
 
 			initDisplay();
 			clear();
 		}
 
-	
 
-		/**
-		 * Initializes the display
-		 */
-		protected function initDisplay():void
+		protected function initDisplay() : void
 		{
 			autoSize = "left";
-
 			// TODO : 	- Check colors (maybe white/grey for info? to make it bit less rainbowy)
-			// - Default system 'monospace' doesn't seem to work 
-
+			// - Default system 'monospace' doesn't seem to work
 			var style : StyleSheet = new StyleSheet();
-
 			style.setStyle("log", {color:_LEVEL_COLOURS[0], fontSize:"10px", fontFamily:"Monaco, Courier, monospace"});
 			style.setStyle("info", {color:_LEVEL_COLOURS[1], display:'inline'});
 			style.setStyle("debug", {color:_LEVEL_COLOURS[2], display:'inline'});
 			style.setStyle("warning", {color:_LEVEL_COLOURS[3], display:'inline', textWeight:"bold"});
 			style.setStyle("error", {color:_LEVEL_COLOURS[4], display:'inline'});
-
 			styleSheet = style;
 		}
 
 
-		// .. STATICS 
+		// Statics
+		// ---------------------------------------------------------------------
 
 
-		public static function info(...msg : *):void
+		/**
+		 * Returns the main singleton logger
+		 */
+		public static function getMaster() : Logger
 		{
-			getMaster().log(msg, LEVEL_INFO);
-		}
-
-
-		public static function debug(...msg : *):void
-		{
-			getMaster().log(msg, LEVEL_DEBUG);
-		}
-
-
-		public static function warning(...msg : *):void
-		{
-			getMaster().log(msg, LEVEL_WARNING);
-		}
-
-
-		public static function error(...msg : *):void
-		{
-			getMaster().log(msg, LEVEL_ERROR);
-		}
-
-
-		public static function clear():void
-		{
-			getMaster().clear();
-		}
-
-
-		public function getXMLDump():XML
-		{
-			return xmlFullLog;
-		}
-
-
-		public static function getMaster():Logger
-		{
-			if(master == null)
+			if (master == null)
 				master = new Logger();
 
 			return master;
 		}
 
 
-		// .. INSTANCE METHODS
+		public static function info( ...msg : * ) : void
+		{
+			getMaster().log(msg, LEVEL_INFO);
+		}
 
-		public function info(...msg : *):void
+
+		public static function debug( ...msg : * ) : void
+		{
+			getMaster().log(msg, LEVEL_DEBUG);
+		}
+
+
+		public static function warning( ...msg : * ) : void
+		{
+			getMaster().log(msg, LEVEL_WARNING);
+		}
+
+
+		public static function error( ...msg : * ) : void
+		{
+			getMaster().log(msg, LEVEL_ERROR);
+		}
+
+
+		public static function clear() : void
+		{
+			getMaster().clear();
+		}
+
+
+		// Instance methods
+		// ---------------------------------------------------------------------
+
+
+		public function info( ...msg : * ) : void
 		{
 			log(msg, LEVEL_INFO);
 		}
 
 
-		public function debug(...msg : *):void
+		public function debug( ...msg : * ) : void
 		{
 			log(msg, LEVEL_DEBUG);
 		}
 
 
-		public function warning(...msg : *):void
+		public function warning( ...msg : * ) : void
 		{
 			log(msg, LEVEL_WARNING);
 		}
 
 
-		public function error(...msg : *):void
+		public function error( ...msg : * ) : void
 		{
 			log(msg, LEVEL_ERROR);
 		}
 
 
-		protected function log(msg : *, level : int = 0):void
+		protected function log( msg : *, level : int = 0 ) : void
 		{
+			if (msg is Array) msg = (msg as Array).join(" ");
 
-			// If the message is an array, tidies up the comas
-			if(msg is Array)
-				msg = (msg as Array).join(" ");
-
-			// Adds the time / message formatting
 			msg = getTimestamp(new Date()) + " :: " + msg;
 
-			// Creates the XML node to add to the log
 			var node : XML = <{_LEVEL_NAMES[level]}>{(msg)}</{_LEVEL_NAMES[level]}>;
 
 			xmlFullLog.prependChild(node);
 
-			// Skips dumping
-			// Note: the filtering could now be done via e4x at the display ...
-			if (level < this.level)
-				return;
-			// Adds the message to the top of the list
+			if (level < this.level) return;
+
 			xmlLog.prependChild(node);
 
-
-			// Removes the last message if the list is bigger than the limit.
-			if(xmlLog.children().length() > maxMessages && maxMessages > 0)
+			if (xmlLog.children().length() > maxMessages && maxMessages > 0)
+			{
 				delete xmlLog.children()[maxMessages];
+			}
 
-			// Updates finally!
 			htmlText = xmlLog;
 		}
 
 
-
-		/**
-		 * Resets the log data and clears the view
-		 * 
-		 * NOTE : Maybe "reset" is more apropriate now as the log is now
-		 * not only related to the console view but also stores data?
-		 */
-		public function clear():void
+		public function getXMLDump() : XML
 		{
-			// Creates the base node for the log
-			// 
-			// TODO : Could be nice to have some atttributes with system infos etc.
-			// in case the log is saved...
+			return xmlFullLog;
+		}
 
+
+		public function clear() : void
+		{
 			xmlLog = new XML("<log />");
 			xmlFullLog = new XML("<log />");
-
 			xmlLog.info = getTimestamp(new Date()) + " :: " + name + " > " + _LEVEL_NAMES[level] + " mode.";
 			xmlFullLog.info = xmlLog.info;
-
 			htmlText = xmlLog;
 		}
 
 
+		// Utils
+		// ---------------------------------------------------------------------
 
-		// .. UTILS 
 
-		private static function getTimestamp(d : Date):String
+		private static function getTimestamp( d : Date ) : String
 		{
 			return "[" + stringPadNumber(d.hours, 2) + ":" + stringPadNumber(d.minutes, 2) + ":" + stringPadNumber(d.seconds, 2) + "::" + stringPadNumber(d.milliseconds, 3) + "]";
 		}
 
 
-		private static function stringPadNumber(num : Number, padding : Number):String
+		private static function stringPadNumber( num : Number, padding : Number ) : String
 		{
 			var stringNum : String = String(num);
-
-			while(stringNum.length < padding)
-				stringNum = "0" + stringNum;
-
+			while (stringNum.length < padding) stringNum = "0" + stringNum;
 			return stringNum;
 		}
-
 	}
 }
-
-
-
-
-
